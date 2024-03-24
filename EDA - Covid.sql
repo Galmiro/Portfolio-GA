@@ -6,7 +6,13 @@
 --SELECT * FROM CovidDeaths
 
 -- Achico tabla seleccionando algunas columnas
-SELECT location, date, total_cases, new_cases, total_deaths, population 
+SELECT 
+	location, 
+	date, 
+	total_cases, 
+	new_cases, 
+	total_deaths, 
+	population 
 FROM CovidDeaths
 WHERE continent IS NOT NULL
 ORDER BY 1,2
@@ -18,67 +24,94 @@ ORDER BY 1,2
 
 
 -- Total de muertes vs Total casos en Argentina
-SELECT location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 as Porcentaje_Fallecidos
+SELECT 
+	location, 
+	date, 
+	total_cases, 
+	total_deaths, 
+	(total_deaths/total_cases)*100 as Porcentaje_Fallecidos
 FROM CovidDeaths
 WHERE location = 'Argentina'
 and continent IS NOT NULL
 ORDER BY 1,2
 
 
--- Total de casos vs Población
--- A dic/2021 un 11% de la población de Arg tuvo Covid
-SELECT location, date, population, total_cases, (total_cases/population)*100 as Porcentaje_Infeccion
+-- Total de casos vs PoblaciÃ³n
+-- A dic/2021 un 11% de la poblaciÃ³n de Arg tuvo Covid
+SELECT 
+	location, 
+	date, 
+	population, 
+	total_cases, 
+	(total_cases/population)*100 as Porcentaje_Infeccion
 FROM CovidDeaths
 WHERE location = 'Argentina'
 AND continent IS NOT NULL
 ORDER BY 1,2
 
 
--- Países con mayores indices de infección en su población
-SELECT location, cast(population as float) as Population, MAX(total_cases) AS Valor_max_casos, MAX((total_cases/population))*100 as Indice_Infeccion
+-- PaÃ­ses con mayores indices de infecciÃ³n en su poblaciÃ³n
+SELECT 
+	location, 
+	cast(population as float) as Population, 
+	MAX(total_cases) AS Valor_max_casos, 
+	MAX((total_cases/population))*100 as Indice_Infeccion
 FROM CovidDeaths
 WHERE continent IS NOT NULL
 GROUP BY location, Population
 ORDER BY Indice_Infeccion DESC
 
 
--- Países con mayores indices de mortalidad  (muertes respecto a población)
-SELECT location, MAX(total_deaths) AS Total_Muertes, MAX((total_deaths/population))*100 as Indice_Mortalidad
+-- PaÃ­ses con mayores indices de mortalidad  (muertes respecto a poblaciÃ³n)
+SELECT 
+	location, 
+	MAX(total_deaths) AS Total_Muertes, 
+	MAX((total_deaths/population))*100 as Indice_Mortalidad
 FROM CovidDeaths
 WHERE continent IS NOT NULL
 GROUP BY location
 ORDER BY indice_Mortalidad DESC
 
 
--- Países con mayor número de muertes por Covid
+-- PaÃ­ses con mayor nÃºmero de muertes por Covid
 -- USA #1 787695, Argentina #13 116639
-SELECT location, MAX(total_deaths) AS Total_Muertes
+SELECT 
+	location, 
+	MAX(total_deaths) AS Total_Muertes
 FROM CovidDeaths
 WHERE continent IS NOT NULL
 GROUP BY location
 ORDER BY Total_Muertes DESC
 
 
--- Datos por continente, mayor número de muertes
-SELECT location, MAX(total_deaths) AS Total_Muertes
+-- Datos por continente, mayor nÃºmero de muertes
+SELECT 
+	location, 
+	MAX(total_deaths) AS Total_Muertes
 FROM CovidDeaths
 WHERE continent IS NULL
-AND location not in (SELECT location FROM CovidDeaths WHERE location LIKE '%income%' or location LIKE 'international')
+AND location not in (
+	SELECT location 
+	FROM CovidDeaths 
+	WHERE location LIKE '%income%' or location LIKE 'international'
+	)
 GROUP BY location
 ORDER BY Total_Muertes DESC
 
 
 
 -- Datos Globales
-SELECT SUM(cast(new_cases as float)) AS Total_Casos, SUM(cast(new_deaths as float)) as Total_Muertes, 
-SUM(cast(new_deaths as float))/SUM(cast(new_cases as float))*100 as Porcentaje_Muertes
+SELECT 
+	SUM(cast(new_cases as float)) AS Total_Casos, 
+	SUM(cast(new_deaths as float)) as Total_Muertes, 
+	SUM(cast(new_deaths as float))/SUM(cast(new_cases as float))*100 as Porcentaje_Muertes
 FROM CovidDeaths
 WHERE continent IS NOT NULL
 ORDER BY 1,2
 
 
 
--- Datos Globales por día (Covid Deaths)
+-- Datos Globales por dÃ­a (Covid Deaths)
 SELECT date, SUM(cast(new_cases as float)) AS Casos_Diarios, SUM(cast(new_deaths as float)) as Muertes_x_dia, 
 SUM(cast(new_deaths as float))/SUM(cast(new_cases as float))*100 as Porcentaje_Muertes
 FROM CovidDeaths
@@ -108,7 +141,7 @@ ORDER BY 2,3
 
 
 
--- Población Total vs Vacunacion
+-- PoblaciÃ³n Total vs Vacunacion
 -- OVER(Partition by ...) calcula saldo acumulado por pais	
 
 SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
@@ -124,7 +157,7 @@ ORDER BY 2,3
 
 
 
--- Paises con mayor n° de dosis suministradas
+-- Paises con mayor nÂ° de dosis suministradas
 -- Argentina puesto #22
 SELECT location, MAX(CAST(total_vaccinations AS float)) AS total_dosis
 FROM CovidVaccinations
@@ -135,7 +168,7 @@ ORDER BY total_dosis DESC
 
 
 
--- Población Total vs Vacunacion
+-- PoblaciÃ³n Total vs Vacunacion
 -- Argentina
 SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
 	,SUM(CAST(vac.new_vaccinations as float)) OVER (Partition by dea.location 
@@ -151,18 +184,22 @@ ORDER BY 2,3
 
 -- Tabla temp con query anterior
 CREATE TABLE #PorcentajePoblacionVacunada
-(Continent varchar(255),
-Location varchar(255),
-Date datetime,
-population numeric,
-Dosis_diarias numeric,
-Saldo_acumulado numeric,
+	(Continent varchar(255),
+	Location varchar(255),
+	Date datetime,
+	population numeric,
+	Dosis_diarias numeric,
+	Saldo_acumulado numeric,
 )
 
 INSERT INTO #PorcentajePoblacionVacunada
-SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
-	,SUM(CAST(vac.new_vaccinations as float)) OVER (Partition by dea.location 
-	ORDER BY dea.location, dea.date) as Total_Vacunas
+SELECT 
+	dea.continent, 
+	dea.location, 
+	dea.date, 
+	dea.population, 
+	vac.new_vaccinations,
+	SUM(CAST(vac.new_vaccinations as float)) OVER (Partition by dea.location ORDER BY dea.location, dea.date) as Total_Vacunas
 FROM CovidDeaths dea
 JOIN CovidVaccinations vac
 	ON dea.location = vac.location
@@ -173,14 +210,18 @@ WHERE dea.continent IS NOT null
 
 -- Testeando nueva tabla
 -- Primer Query
-SELECT *, (Saldo_acumulado/population)*100 as Dosis_poblacion
+SELECT 
+	*, 
+	(Saldo_acumulado/population)*100 as Dosis_poblacion
 FROM #PorcentajePoblacionVacunada
 WHERE location = 'Argentina'
 ORDER BY 2,3
 
 
 -- Segunda Query
-SELECT location, MAX(saldo_acumulado) as Total_dosis
+SELECT 
+	location, 
+	MAX(saldo_acumulado) as Total_dosis
 FROM #PorcentajePoblacionVacunada
 GROUP BY location
 ORDER BY 2 DESC
@@ -191,7 +232,9 @@ ORDER BY 2 DESC
 
 -- Fallecidos por pais
 CREATE VIEW Death_per_country AS
-SELECT location, MAX(total_deaths) AS Total_Muertes
-FROM CovidDeaths
-WHERE continent IS NOT NULL
-GROUP BY location
+	SELECT 
+		location, 
+		MAX(total_deaths) AS Total_Muertes
+	FROM CovidDeaths
+	WHERE continent IS NOT NULL
+	GROUP BY location
